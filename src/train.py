@@ -154,6 +154,7 @@ def train_deepfm(data: list[Any], labels: list[int], config: Any):
 
             if early_stopper.step(mae):
                 print("Early stopping triggered. Stopping training.")
+                print(f"Best MAE: {early_stopper.best_loss:.4f}")
                 break
 
     return model
@@ -241,6 +242,7 @@ def train_dcnv2(data: list[Any], labels: list[int], config: Any):
 
             if early_stopper.step(mae):
                 print("Early stopping triggered. Stopping training.")
+                print(f"Best MAE: {early_stopper.best_loss:.4f}")
                 break
 
     return model

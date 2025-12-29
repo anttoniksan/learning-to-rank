@@ -10,21 +10,18 @@ class CrossNet(nn.Module):
     def __init__(self, input_dim: int, n_layers: int):
         super(CrossNet, self).__init__()
         self.n_layers = n_layers
-        self.layers = nn.ModuleList(
-            [
-                nn.Sequential(
-                    nn.Linear(input_dim, input_dim, bias=False),
-                    nn.BatchNorm1d(input_dim),
-                )
-                for _ in range(n_layers)
-            ]
+        self.w = nn.ModuleList(
+            [nn.Linear(input_dim, 1, bias=False) for _ in range(n_layers)]
+        )
+        self.b = nn.ParameterList(
+            [nn.Parameter(torch.zeros((input_dim,))) for _ in range(n_layers)]
         )
 
     def forward(self, x):
         xl = x
 
-        for layer in self.layers:
-            xl = x * layer(xl) + xl
+        for layer, bias in zip(self.w, self.b):
+            xl = x * layer(xl) + bias + xl
 
         return xl
 
