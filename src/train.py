@@ -14,10 +14,10 @@ from src.models.dcnv2 import DCNV2
 from src.models.deepfm import DeepFM
 
 
-def _get_groups(data: list[tuple[int, int, int]]) -> dict[int, int]:
+def _get_groups(data: list[Any]) -> dict[int, int]:
     groups = defaultdict(int)
-    for user_id, _, _ in data:
-        groups[user_id] += 1
+    for user in data:
+        groups[user[0]] += 1
     return groups
 
 
@@ -54,9 +54,14 @@ def train_lgbm(data: list[tuple[int, int, int]], labels: list[int]):
     )
 
     print("Evaluation on test set:")
-    print(ranker.predict(np.array(X_test[:5])))
+    prediction = ranker.predict(np.array(X_test[: test_groups[0]]))
+    sorted_prediction = np.argsort(prediction)[::-1]
+    print("Predicted ranking (user 1):")
+    print(sorted_prediction)
+
     print("Ground truth:")
-    print(np.array(y_test[:5]))
+    ground_truth = np.array(y_test[: test_groups[0]])
+    print(np.array([ground_truth[i] for i in sorted_prediction]).flatten())
 
     return ranker
 

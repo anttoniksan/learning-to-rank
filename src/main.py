@@ -9,7 +9,8 @@ from src.dataloader import MovieLensDataset
 from src.train import train_dcnv2, train_deepfm, train_lgbm
 
 DEEP_LEARNING_MODELS = ["deepfm", "dcnv2"]
-INCLUDES_METADATA = ["dcnv2"]
+INCLUDES_METADATA = ["dcnv2", "lgbm"]
+SHOULD_NORMALIZE = ["deepfm", "dcnv2"]
 
 
 def parse_args():
@@ -67,12 +68,15 @@ def main():
     movie_file = data_path / "u.item"
 
     include_metadata = model_type in INCLUDES_METADATA
+    should_normalize = model_type in SHOULD_NORMALIZE
 
     dataset = MovieLensDataset(
         data_file=data_file,
         user_data=user_file,
         movie_data=movie_file,
         include_metadata=include_metadata,
+        drop_ids=False,
+        normalize=should_normalize,
     )
 
     data = dataset.data
@@ -87,6 +91,8 @@ def main():
             model = train_dcnv2(data, labels, config)
         case "deepfm":
             model = train_deepfm(data, labels, config)
+        case _:
+            raise ValueError(f"Unsupported model type: {model_type}")
 
     if should_save and model_type in DEEP_LEARNING_MODELS:
         save_path = data_path / f"{model_type}_model.pth"

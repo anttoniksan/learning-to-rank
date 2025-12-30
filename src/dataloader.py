@@ -72,14 +72,18 @@ class MovieLensDataset(Dataset):
         return user_info
 
     def _prepare_data(
-        self, data_file: Path, include_metadata: bool = False
+        self,
+        data_file: Path,
+        include_metadata: bool = False,
+        drop_ids: bool = False,
+        normalize: bool = True,
     ) -> tuple[list[Any], list[int]]:
         ratings_info = read_csv(data_file, separator="\t", has_header=False).rename(
             self._get_column_mapping(["user_id", "movie_id", "rating", "timestamp"])
         )
 
         ratings = ratings_info.select(pl.col("user_id"), pl.col("movie_id"))
-        labels = ratings_info.select(pl.col("rating"))
+        labels = ratings_info.select(pl.col("rating")).to_numpy()
 
         if include_metadata:
             ratings = ratings.join(
@@ -90,7 +94,12 @@ class MovieLensDataset(Dataset):
                 self.movie_info, left_on="movie_id", right_on="movie_id", how="left"
             )
 
-        labels = labels.to_numpy() / 5.0  # Normalize ratings to [0, 1]
+        if drop_ids:
+            ratings = ratings.drop("user_id", "movie_id")
+
+        if normalize:
+            labels = labels / 5.0  # Normalize ratings to [0, 1]
+
         return ratings.to_numpy().tolist(), labels.tolist()
 
     def __init__(
@@ -99,11 +108,19 @@ class MovieLensDataset(Dataset):
         user_data: Path,
         movie_data: Path,
         include_metadata: bool = False,
+        drop_ids: bool = False,
+        normalize: bool = True,
     ):
         self.user_info = self._load_user_info(user_data)
         self.movie_info = self._load_movie_info(movie_data)
 
-        data, labels = self._prepare_data(data_file, include_metadata=include_metadata)
+        data, labels = self._prepare_data(
+            data_file,
+            include_metadata=include_metadata,
+            drop_ids=drop_ids,
+            normalize=normalize,
+        )
+
         self.data = data
         self.labels = labels
 
