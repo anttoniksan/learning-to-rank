@@ -22,10 +22,10 @@ def _get_groups(data: list[Any]) -> dict[int, int]:
 
 
 DEFAULT_TEST_SIZE = 0.1
-DEFAULT_RANDOM_STATE = None
+DEFAULT_RANDOM_STATE = 42
 
 
-def train_lgbm(data: list[tuple[int, int, int]], labels: list[int]):
+def train_lgbm(data: list[Any], labels: list[int]):
     print(f"Training with {len(data)} samples.")
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -41,14 +41,20 @@ def train_lgbm(data: list[tuple[int, int, int]], labels: list[int]):
     train_groups = list(_get_groups(X_train).values())
     test_groups = list(_get_groups(X_test).values())
 
-    ranker_params = {"objective": "lambdarank", "n_estimators": 20}
+    ranker_params = {
+        "objective": "lambdarank",
+        "n_estimators": 100,
+        "learning_rate": 0.1,
+        "random_state": DEFAULT_RANDOM_STATE,
+        "reg_lambda": 1e-4,
+    }
 
     ranker = LGBMRanker(**ranker_params)
     ranker = ranker.fit(
         X=np.array(X_train),
-        y=np.array(y_train),
+        y=np.array(y_train).flatten(),
         group=train_groups,
-        eval_set=[(np.array(X_test), np.array(y_test))],
+        eval_set=[(np.array(X_test), np.array(y_test).flatten())],
         eval_group=[test_groups],
         eval_metric=["map"],
     )
